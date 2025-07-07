@@ -31,7 +31,7 @@ const Certificates: React.FC = () => {
     certificateId: '',
     outputType: 'PDF',
     duration: '',
-    status: 'active' as const,
+    status: 'active' as 'active' | 'expired' | 'pending',
     userId: userProfile?.id || '',
     issueDate: '',
     expiryDate: ''
@@ -139,7 +139,7 @@ const Certificates: React.FC = () => {
       certificateId: '',
       outputType: 'PDF',
       duration: '',
-      status: 'active',
+      status: 'active' as 'active' | 'expired' | 'pending',
       userId: userProfile?.id || '',
       issueDate: '',
       expiryDate: ''

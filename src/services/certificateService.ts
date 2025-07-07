@@ -47,13 +47,14 @@ export const addCertificate = async (certificateData: Omit<Certificate, 'id' | '
   }
 };
 
-export const updateCertificate = async (certificateId: string, updates: Partial<Certificate>) => {
+export const updateCertificate = async (certificateId: string, updates: Partial<Omit<Certificate, 'id' | 'createdAt'>>) => {
   try {
     const certificateRef = doc(db, 'certificates', certificateId);
-    await updateDoc(certificateRef, {
+    const updateData = {
       ...updates,
       updatedAt: new Date()
-    });
+    };
+    await updateDoc(certificateRef, updateData);
   } catch (error) {
     console.error('Error updating certificate:', error);
     throw error;
