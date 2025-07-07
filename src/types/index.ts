@@ -30,17 +30,18 @@ export interface Company {
 
 export interface Certificate {
   id: string;
-  name: string;
+  courseName: string;
+  courseLink: string;
+  category: 'frontend' | 'backend' | 'automation' | 'testing' | 'project-management' | 'others';
   organization: string;
-  level: string;
-  certificateId: string;
-  outputType: string;
-  duration: string;
-  status: 'active' | 'expired' | 'pending';
+  certificateName: string;
+  level: 'beginner' | 'intermediate' | 'advance';
+  startDate: Date;
+  endDate: Date;
+  status: 'started' | 'in-progress' | 'completed' | 'other';
+  output: 'demo' | 'certificate';
   userId: string;
   companyId: string;
-  issueDate: Date;
-  expiryDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
