@@ -126,8 +126,8 @@ const Certificates: React.FC = () => {
       organization: certificate.organization,
       certificateName: certificate.certificateName,
       level: certificate.level,
-      startDate: certificate.startDate.toISOString().split('T')[0],
-      endDate: certificate.endDate.toISOString().split('T')[0],
+      startDate: certificate.startDate ? (() => { const d = new Date(certificate.startDate); return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0]; })() : '',
+      endDate: certificate.endDate ? (() => { const d = new Date(certificate.endDate); return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0]; })() : '',
       status: certificate.status,
       output: certificate.output,
       userId: certificate.userId
