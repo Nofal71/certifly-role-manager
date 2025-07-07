@@ -4,15 +4,23 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, FileText, Settings, User } from 'lucide-react';
+import AdminLayout from './AdminLayout';
 
 const Layout: React.FC = () => {
   const { userProfile, company, logout, hasPermission } = useAuth();
   const location = useLocation();
 
+  // Check if user is admin
+  const isAdmin = hasPermission('manage-users') && hasPermission('manage-roles');
+
+  // Use admin layout for admin users
+  if (isAdmin) {
+    return <AdminLayout />;
+  }
+
+  // Regular layout for employee users
   const navigation = [
     { name: 'Certificates', href: '/certificates', icon: FileText, permission: 'manage-certificates' },
-    { name: 'Users', href: '/users', icon: Users, permission: 'manage-users' },
-    { name: 'Settings', href: '/settings', icon: Settings, permission: 'manage-roles' },
   ];
 
   const filteredNavigation = navigation.filter(item => hasPermission(item.permission));

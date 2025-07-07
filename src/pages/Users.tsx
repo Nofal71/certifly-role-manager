@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Users as UsersIcon, UserPlus } from 'lucide-react';
 
 const Users: React.FC = () => {
@@ -39,7 +39,11 @@ const Users: React.FC = () => {
       const companyUsers = await getCompanyUsers(userProfile.companyId);
       setUsers(companyUsers);
     } catch (error) {
-      toast.error('Failed to load users');
+      toast({
+        title: "Error",
+        description: "Failed to load users",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -52,7 +56,11 @@ const Users: React.FC = () => {
       const companyRoles = await getCompanyRoles(userProfile.companyId);
       setRoles(companyRoles);
     } catch (error) {
-      toast.error('Failed to load roles');
+      toast({
+        title: "Error",
+        description: "Failed to load roles",
+        variant: "destructive"
+      });
     }
   };
 
@@ -65,34 +73,53 @@ const Users: React.FC = () => {
         ...formData,
         companyId: userProfile.companyId
       });
-      toast.success('Employee created successfully! Password reset email sent to the user.');
+      toast({
+        title: "Success",
+        description: "Employee created successfully! Password reset email sent to the user."
+      });
       setDialogOpen(false);
       resetForm();
       loadUsers();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create employee');
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create employee",
+        variant: "destructive"
+      });
     }
   };
 
   const handleRoleUpdate = async (userId: string, newRoleId: string) => {
     try {
       await updateUser(userId, { roleId: newRoleId });
-      toast.success('User role updated successfully');
+      toast({
+        title: "Success",
+        description: "User role updated successfully"
+      });
       loadUsers();
     } catch (error) {
-      toast.error('Failed to update user role');
+      toast({
+        title: "Error",
+        description: "Failed to update user role",
+        variant: "destructive"
+      });
     }
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    if (window.confirm(`Are you sure you want to delete ${userName}?`)) {
-      try {
-        await deleteUser(userId);
-        toast.success('User deleted successfully');
-        loadUsers();
-      } catch (error) {
-        toast.error('Failed to delete user');
-      }
+    try {
+      await deleteUser(userId);
+      toast({
+        title: "Success",
+        description: "User deleted successfully"
+      });
+      loadUsers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
+        variant: "destructive"
+      });
     }
   };
 
