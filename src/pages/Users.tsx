@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Users as UsersIcon, UserPlus, Edit } from 'lucide-react';
+import { Users as UsersIcon, UserPlus } from 'lucide-react';
 
 const Users: React.FC = () => {
   const { userProfile } = useAuth();
@@ -225,7 +225,13 @@ const Users: React.FC = () => {
                 </div>
                 
                 <div className="text-sm text-gray-500">
-                  <div>Joined: {user.createdAt.toLocaleDateString()}</div>
+                  <div>Joined: {user?.createdAt ? (
+                    typeof user.createdAt === 'string'
+                      ? user.createdAt
+                      : user.createdAt instanceof Date && user.createdAt.toLocaleDateString
+                        ? user.createdAt.toLocaleDateString()
+                        : String(user.createdAt)
+                  ) : 'Unknown'}</div>
                 </div>
                 
                 <div className="flex justify-end space-x-2 pt-2">

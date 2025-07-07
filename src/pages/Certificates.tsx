@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { FileText, Edit, Settings } from 'lucide-react';
+import { FileText, Edit } from 'lucide-react';
 
 const Certificates: React.FC = () => {
   const { userProfile, hasPermission } = useAuth();
@@ -372,9 +372,23 @@ const Certificates: React.FC = () => {
                 {certificate.duration && (
                   <div><strong>Duration:</strong> {certificate.duration}</div>
                 )}
-                <div><strong>Issue Date:</strong> {certificate.issueDate.toLocaleDateString()}</div>
+                <div>
+                  <strong>Issue Date:</strong>{' '}
+                  {certificate.issueDate && typeof certificate.issueDate === 'object' && 'seconds' in certificate.issueDate
+                    ? new Date(Number((certificate.issueDate as any).seconds) * 1000).toLocaleDateString()
+                    : certificate.issueDate instanceof Date
+                    ? certificate.issueDate.toLocaleDateString()
+                    : certificate.issueDate}
+                </div>
                 {certificate.expiryDate && (
-                  <div><strong>Expires:</strong> {certificate.expiryDate.toLocaleDateString()}</div>
+                  <div>
+                    <strong>Expires:</strong>{' '}
+                    {typeof certificate.expiryDate === 'object' && certificate.expiryDate !== null && 'seconds' in certificate.expiryDate
+                      ? new Date(Number(certificate.expiryDate.seconds) * 1000).toLocaleDateString()
+                      : certificate.expiryDate instanceof Date
+                      ? certificate.expiryDate.toLocaleDateString()
+                      : certificate.expiryDate}
+                  </div>
                 )}
                 {isAdmin && (
                   <div><strong>User:</strong> {getUserName(certificate.userId)}</div>
