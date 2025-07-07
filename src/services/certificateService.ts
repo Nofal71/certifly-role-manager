@@ -24,7 +24,10 @@ export const getCertificates = async (userId: string, companyId: string, isAdmin
     }
     
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Certificate[];
+    return snapshot.docs.map(doc => {
+      const data = doc.data() as Omit<Certificate, 'id'>;
+      return { id: doc.id, ...data } as Certificate;
+    });
   } catch (error) {
     console.error('Error fetching certificates:', error);
     throw error;
