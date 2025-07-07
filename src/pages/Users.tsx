@@ -9,10 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/hooks/use-toast';
-import { Users as UsersIcon, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
+import { Users as UsersIcon, UserPlus, Trash2, Loader } from 'lucide-react';
 
 const Users: React.FC = () => {
   const { userProfile } = useAuth();
@@ -20,6 +21,9 @@ const Users: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [updateLoading, setUpdateLoading] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -39,11 +43,7 @@ const Users: React.FC = () => {
       const companyUsers = await getCompanyUsers(userProfile.companyId);
       setUsers(companyUsers);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load users",
-        variant: "destructive"
-      });
+      toast.error("Failed to load users");
     } finally {
       setLoading(false);
     }
@@ -56,11 +56,7 @@ const Users: React.FC = () => {
       const companyRoles = await getCompanyRoles(userProfile.companyId);
       setRoles(companyRoles);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load roles",
-        variant: "destructive"
-      });
+      toast.error("Failed to load roles");
     }
   };
 
@@ -68,58 +64,46 @@ const Users: React.FC = () => {
     e.preventDefault();
     if (!userProfile) return;
 
+    setCreateLoading(true);
     try {
       await createEmployee({
         ...formData,
         companyId: userProfile.companyId
       });
-      toast({
-        title: "Success",
-        description: "Employee created successfully! Password reset email sent to the user."
-      });
+      toast.success("Employee created successfully! Password reset email sent to the user.");
       setDialogOpen(false);
       resetForm();
       loadUsers();
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create employee",
-        variant: "destructive"
-      });
+      toast.error(error.message || "Failed to create employee");
+    } finally {
+      setCreateLoading(false);
     }
   };
 
   const handleRoleUpdate = async (userId: string, newRoleId: string) => {
+    setUpdateLoading(userId);
     try {
       await updateUser(userId, { roleId: newRoleId });
-      toast({
-        title: "Success",
-        description: "User role updated successfully"
-      });
+      toast.success("User role updated successfully");
       loadUsers();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update user role",
-        variant: "destructive"
-      });
+      toast.error("Failed to update user role");
+    } finally {
+      setUpdateLoading(null);
     }
   };
 
-  const handleDeleteUser = async (userId: string, userName: string) => {
+  const handleDeleteUser = async (userId: string) => {
+    setDeleteLoading(userId);
     try {
       await deleteUser(userId);
-      toast({
-        title: "Success",
-        description: "User deleted successfully"
-      });
+      toast.success("User deleted successfully");
       loadUsers();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete user",
-        variant: "destructive"
-      });
+      toast.error("Failed to delete user");
+    } finally {
+      setDeleteLoading(null);
     }
   };
 
@@ -139,7 +123,7 @@ const Users: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -209,37 +193,50 @@ const Users: React.FC = () => {
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Add Employee</Button>
+                <Button type="submit" disabled={createLoading}>
+                  {createLoading && <Loader className="w-4 h-4 mr-2 animate-spin" />}
+                  Add Employee
+                </Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {users.map((user) => (
-          <Card key={user.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{user.name}</CardTitle>
-                  <CardDescription>{user.email}</CardDescription>
-                </div>
-                <Badge variant={user.isActive ? "default" : "secondary"}>
-                  {user.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-sm font-medium">Role</Label>
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">{user.name}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>
                   <Select
                     value={user.roleId}
                     onValueChange={(newRoleId) => handleRoleUpdate(user.id, newRoleId)}
+                    disabled={updateLoading === user.id}
                   >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue>{getRoleName(user.roleId)}</SelectValue>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue>
+                        {updateLoading === user.id ? (
+                          <div className="flex items-center">
+                            <Loader className="w-4 h-4 mr-2 animate-spin" />
+                            Updating...
+                          </div>
+                        ) : (
+                          getRoleName(user.roleId)
+                        )}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {roles.map((role) => (
@@ -249,32 +246,60 @@ const Users: React.FC = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                
-                <div className="text-sm text-gray-500">
-                  <div>Joined: {user?.createdAt ? (
+                </TableCell>
+                <TableCell>
+                  <Badge variant={user.isActive ? "default" : "secondary"}>
+                    {user.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-sm text-gray-500">
+                  {user?.createdAt ? (
                     typeof user.createdAt === 'string'
                       ? user.createdAt
                       : user.createdAt instanceof Date && user.createdAt.toLocaleDateString
                         ? user.createdAt.toLocaleDateString()
                         : String(user.createdAt)
-                  ) : 'Unknown'}</div>
-                </div>
-                
-                <div className="flex justify-end space-x-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteUser(user.id, user.name)}
-                    disabled={user.id === userProfile?.id}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  ) : 'Unknown'}
+                </TableCell>
+                <TableCell className="text-right">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={user.id === userProfile?.id || deleteLoading === user.id}
+                      >
+                        {deleteLoading === user.id ? (
+                          <Loader className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the user 
+                          <strong> {user.name}</strong> and remove their data from our servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete User
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
       
       {users.length === 0 && (

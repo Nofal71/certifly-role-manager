@@ -34,6 +34,25 @@ export const getCertificates = async (userId: string, companyId: string, isAdmin
   }
 };
 
+export const getUserCertificates = async (userId: string) => {
+  try {
+    const q = query(
+      collection(db, 'certificates'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => {
+      const data = doc.data() as Omit<Certificate, 'id'>;
+      return { id: doc.id, ...data } as Certificate;
+    });
+  } catch (error) {
+    console.error('Error fetching user certificates:', error);
+    throw error;
+  }
+};
+
 export const addCertificate = async (certificateData: Omit<Certificate, 'id' | 'createdAt' | 'updatedAt'>) => {
   try {
     const certificate = {

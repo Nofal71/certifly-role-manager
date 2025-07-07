@@ -9,10 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { FileText, Edit } from 'lucide-react';
+import { FileText, Edit, Trash2, Loader } from 'lucide-react';
 
 const Certificates: React.FC = () => {
   const { userProfile, hasPermission } = useAuth();
@@ -21,6 +22,8 @@ const Certificates: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCertificate, setEditingCertificate] = useState<Certificate | null>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   
   const isAdmin = hasPermission('manage-users');
   
@@ -76,6 +79,7 @@ const Certificates: React.FC = () => {
     e.preventDefault();
     if (!userProfile) return;
 
+    setSaveLoading(true);
     try {
       const certificateData = {
         ...formData,
@@ -99,6 +103,8 @@ const Certificates: React.FC = () => {
       loadCertificates();
     } catch (error) {
       toast.error('Failed to save certificate');
+    } finally {
+      setSaveLoading(false);
     }
   };
 
@@ -120,14 +126,15 @@ const Certificates: React.FC = () => {
   };
 
   const handleDelete = async (certificateId: string) => {
-    if (window.confirm('Are you sure you want to delete this certificate?')) {
-      try {
-        await deleteCertificate(certificateId);
-        toast.success('Certificate deleted successfully');
-        loadCertificates();
-      } catch (error) {
-        toast.error('Failed to delete certificate');
-      }
+    setDeleteLoading(certificateId);
+    try {
+      await deleteCertificate(certificateId);
+      toast.success('Certificate deleted successfully');
+      loadCertificates();
+    } catch (error) {
+      toast.error('Failed to delete certificate');
+    } finally {
+      setDeleteLoading(null);
     }
   };
 
@@ -148,10 +155,10 @@ const Certificates: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'expired': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'default';
+      case 'expired': return 'destructive';
+      case 'pending': return 'secondary';
+      default: return 'outline';
     }
   };
 
@@ -160,10 +167,21 @@ const Certificates: React.FC = () => {
     return user ? user.name : 'Unknown User';
   };
 
+  const formatDate = (date: any) => {
+    if (!date) return 'N/A';
+    if (typeof date === 'object' && 'seconds' in date) {
+      return new Date(Number(date.seconds) * 1000).toLocaleDateString();
+    }
+    if (date instanceof Date) {
+      return date.toLocaleDateString();
+    }
+    return String(date);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -341,7 +359,8 @@ const Certificates: React.FC = () => {
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={saveLoading}>
+                  {saveLoading && <Loader className="w-4 h-4 mr-2 animate-spin" />}
                   {editingCertificate ? 'Update Certificate' : 'Add Certificate'}
                 </Button>
               </div>
@@ -350,70 +369,82 @@ const Certificates: React.FC = () => {
         </Dialog>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {certificates.map((certificate) => (
-          <Card key={certificate.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{certificate.name}</CardTitle>
-                  <CardDescription>{certificate.organization}</CardDescription>
-                </div>
-                <Badge className={getStatusColor(certificate.status)}>
-                  {certificate.status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div><strong>Level:</strong> {certificate.level}</div>
-                <div><strong>ID:</strong> {certificate.certificateId}</div>
-                <div><strong>Type:</strong> {certificate.outputType}</div>
-                {certificate.duration && (
-                  <div><strong>Duration:</strong> {certificate.duration}</div>
-                )}
-                <div>
-                  <strong>Issue Date:</strong>{' '}
-                  {certificate.issueDate && typeof certificate.issueDate === 'object' && 'seconds' in certificate.issueDate
-                    ? new Date(Number((certificate.issueDate as any).seconds) * 1000).toLocaleDateString()
-                    : certificate.issueDate instanceof Date
-                    ? certificate.issueDate.toLocaleDateString()
-                    : certificate.issueDate}
-                </div>
-                {certificate.expiryDate && (
-                  <div>
-                    <strong>Expires:</strong>{' '}
-                    {typeof certificate.expiryDate === 'object' && certificate.expiryDate !== null && 'seconds' in certificate.expiryDate
-                      ? new Date(Number(certificate.expiryDate.seconds) * 1000).toLocaleDateString()
-                      : certificate.expiryDate instanceof Date
-                      ? certificate.expiryDate.toLocaleDateString()
-                      : certificate.expiryDate}
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Organization</TableHead>
+              <TableHead>Level</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Issue Date</TableHead>
+              <TableHead>Expiry Date</TableHead>
+              {isAdmin && <TableHead>User</TableHead>}
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {certificates.map((certificate) => (
+              <TableRow key={certificate.id}>
+                <TableCell className="font-medium">{certificate.name}</TableCell>
+                <TableCell>{certificate.organization}</TableCell>
+                <TableCell>{certificate.level}</TableCell>
+                <TableCell>
+                  <Badge variant={getStatusColor(certificate.status)}>
+                    {certificate.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>{formatDate(certificate.issueDate)}</TableCell>
+                <TableCell>{formatDate(certificate.expiryDate)}</TableCell>
+                {isAdmin && <TableCell>{getUserName(certificate.userId)}</TableCell>}
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(certificate)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={deleteLoading === certificate.id}
+                        >
+                          {deleteLoading === certificate.id ? (
+                            <Loader className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the certificate 
+                            <strong> {certificate.name}</strong>.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(certificate.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete Certificate
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
-                )}
-                {isAdmin && (
-                  <div><strong>User:</strong> {getUserName(certificate.userId)}</div>
-                )}
-              </div>
-              
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEdit(certificate)}
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleDelete(certificate.id)}
-                >
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
       
       {certificates.length === 0 && (
