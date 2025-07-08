@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import axiosInstance from '../../axiosinstance'
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -28,6 +29,13 @@ const Login: React.FC = () => {
         setResetMode(false);
       } else {
         await loginUser(formData.email, formData.password);
+        const response = await axiosInstance.post('/Auth/signin', {
+          email: formData.email,
+          password: formData.password
+        })
+        const token = response.data.token;
+        localStorage.setItem('token', token);
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         toast.success('Login successful!');
         navigate('/certificates');
       }

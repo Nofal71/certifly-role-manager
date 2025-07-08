@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Users as UsersIcon, UserPlus, Trash2, Loader } from 'lucide-react';
+import axiosInstance from '../../axiosinstance';
 
 const Users: React.FC = () => {
   const { userProfile } = useAuth();
@@ -70,6 +71,11 @@ const Users: React.FC = () => {
         ...formData,
         companyId: userProfile.companyId
       });
+      await axiosInstance.post('/Employee/create' , {
+        email: formData.email,
+        password: formData.email,
+        role: roles.find(role => role.id === formData.roleId).name,
+      })
       toast.success("Employee created successfully! Password reset email sent to the user.");
       setDialogOpen(false);
       resetForm();
