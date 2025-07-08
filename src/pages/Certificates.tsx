@@ -375,7 +375,7 @@ const Certificates: React.FC = () => {
       </div>
       
       <div className="border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-w-screen-lg ">
           <Table>
             <TableHeader>
               <TableRow>

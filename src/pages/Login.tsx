@@ -33,7 +33,7 @@ const Login: React.FC = () => {
         const response = await loginUser(formData.email, formData.password);
         setCurrentUser(response.user);
         toast.success('Login successful!');
-        navigate('/certificates');
+        navigate('/dashboard');
       }
     } catch (error: any) {
       toast.error(error.message || 'Operation failed');
