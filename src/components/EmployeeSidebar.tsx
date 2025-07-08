@@ -16,19 +16,16 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { BarChart, Users, FileText, Settings, LogOut, User, Shield, Home } from 'lucide-react';
+import { FileText, LogOut, User, Home, Settings } from 'lucide-react';
 
-const AdminSidebar: React.FC = () => {
+const EmployeeSidebar: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const location = useLocation();
   const { state } = useSidebar();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Analytics', href: '/analytics', icon: BarChart },
     { name: 'Certificates', href: '/certificates', icon: FileText },
-    { name: 'Employees', href: '/employees', icon: Users },
-    { name: 'Roles', href: '/roles', icon: Shield },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -44,7 +41,7 @@ const AdminSidebar: React.FC = () => {
           {state === 'expanded' && (
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-semibold">{currentUser?.company?.companyName}</span>
-              <span className="truncate text-xs">Employee Management</span>
+              <span className="truncate text-xs">Certificate Portal</span>
             </div>
           )}
         </div>
@@ -81,7 +78,7 @@ const AdminSidebar: React.FC = () => {
               {state === 'expanded' && (
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{currentUser?.email}</span>
-                  <span className="truncate text-xs text-muted-foreground">Admin</span>
+                  <span className="truncate text-xs text-muted-foreground capitalize">{currentUser?.role}</span>
                 </div>
               )}
             </div>
@@ -105,4 +102,4 @@ const AdminSidebar: React.FC = () => {
   );
 };
 
-export default AdminSidebar;
+export default EmployeeSidebar;

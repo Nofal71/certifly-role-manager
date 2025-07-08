@@ -42,7 +42,9 @@ const Employees: React.FC = () => {
   const loadEmployees = async () => {
     try {
       const employeeList = await getAllEmployees();
-      setEmployees(employeeList);
+      // Filter out the current logged-in user
+      const filteredEmployees = employeeList.filter(emp => emp.user.id !== currentUser?.id);
+      setEmployees(filteredEmployees);
     } catch (error: any) {
       toast.error(error.message || "Failed to load employees");
     } finally {
@@ -129,7 +131,7 @@ const Employees: React.FC = () => {
   if (!isAdmin()) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to view this page.</p>
+        <p className="text-muted-foreground">You don't have permission to view this page.</p>
       </div>
     );
   }
@@ -137,17 +139,17 @@ const Employees: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Employees</h1>
-          <p className="text-gray-600">Manage company employees and their roles</p>
+          <h1 className="text-3xl font-bold">Employees</h1>
+          <p className="text-muted-foreground">Manage company employees and their roles</p>
         </div>
         
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -281,7 +283,7 @@ const Employees: React.FC = () => {
                         <Button
                           size="sm"
                           variant="destructive"
-                          disabled={employee.user.id === currentUser?.id || deleteLoading === employee.id}
+                          disabled={deleteLoading === employee.id}
                         >
                           {deleteLoading === employee.id ? (
                             <Loader className="w-4 h-4 animate-spin" />
@@ -319,9 +321,9 @@ const Employees: React.FC = () => {
       
       {employees.length === 0 && (
         <div className="text-center py-12">
-          <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No employees</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <UsersIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-2 text-sm font-medium">No employees</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             Get started by adding your first employee.
           </p>
         </div>

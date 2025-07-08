@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { getAllCertificates, getMyCertificates, createCertificate, updateCertificate, deleteCertificate } from '@/services/certificateService';
 import { getAllEmployees } from '@/services/employeeService';
@@ -12,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { FileText, Edit, Trash2, Loader, ExternalLink } from 'lucide-react';
+import { FileText, Edit, Trash2, Loader, ExternalLink, Plus } from 'lucide-react';
 
 const Certificates: React.FC = () => {
   const { currentUser, isAdmin } = useAuth();
@@ -172,10 +172,10 @@ const Certificates: React.FC = () => {
 
   const getCategoryColor = (level: string) => {
     switch (level?.toLowerCase()) {
-      case 'beginner': return 'bg-green-100 text-green-800';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'advance': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'beginner': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'intermediate': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'advance': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
@@ -192,17 +192,17 @@ const Certificates: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Certificates</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold">Certificates</h1>
+          <p className="text-muted-foreground">
             {isAdmin() ? 'Manage all company certificates' : 'Manage your certificates'}
           </p>
         </div>
@@ -210,7 +210,7 @@ const Certificates: React.FC = () => {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => { resetForm(); setEditingCertificate(null); }}>
-              <FileText className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4 mr-2" />
               Add Certificate
             </Button>
           </DialogTrigger>
@@ -376,118 +376,122 @@ const Certificates: React.FC = () => {
       </div>
       
       <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Course Name</TableHead>
-              <TableHead>Certificate Name</TableHead>
-              <TableHead>Organization</TableHead>
-              <TableHead>Level</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Output</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>End Date</TableHead>
-              {isAdmin() && <TableHead>Employee</TableHead>}
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {certificates.map((certificate) => (
-              <TableRow key={certificate.id}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center space-x-2">
-                    <span>{certificate.courseName}</span>
-                    {certificate.courseLink && (
-                      <a 
-                        href={certificate.courseLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:text-blue-700"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>{certificate.certificateName}</TableCell>
-                <TableCell>{certificate.organization}</TableCell>
-                <TableCell>
-                  {certificate.level && (
-                    <Badge className={getCategoryColor(certificate.level)}>
-                      {certificate.level}
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {certificate.status && (
-                    <Badge variant={getStatusColor(certificate.status)}>
-                      {certificate.status}
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell className="capitalize">{certificate.demo}</TableCell>
-                <TableCell>{formatDate(certificate.startDate)}</TableCell>
-                <TableCell>{formatDate(certificate.endDate)}</TableCell>
-                {isAdmin() && <TableCell>{getEmployeeName(certificate.userId)}</TableCell>}
-                <TableCell className="text-right">
-                  <div className="flex justify-end space-x-2">
-                    {canEditCertificate(certificate) && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(certificate)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    )}
-                    {canEditCertificate(certificate) && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
+        <ScrollArea className="w-full">
+          <div className="min-w-[1200px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[200px]">Course Name</TableHead>
+                  <TableHead className="min-w-[200px]">Certificate Name</TableHead>
+                  <TableHead className="min-w-[150px]">Organization</TableHead>
+                  <TableHead className="min-w-[100px]">Level</TableHead>
+                  <TableHead className="min-w-[120px]">Status</TableHead>
+                  <TableHead className="min-w-[100px]">Output</TableHead>
+                  <TableHead className="min-w-[120px]">Start Date</TableHead>
+                  <TableHead className="min-w-[120px]">End Date</TableHead>
+                  {isAdmin() && <TableHead className="min-w-[150px]">Employee</TableHead>}
+                  <TableHead className="text-right min-w-[120px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {certificates.map((certificate) => (
+                  <TableRow key={certificate.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center space-x-2">
+                        <span className="truncate">{certificate.courseName}</span>
+                        {certificate.courseLink && (
+                          <a 
+                            href={certificate.courseLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-primary/80"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{certificate.certificateName}</TableCell>
+                    <TableCell>{certificate.organization}</TableCell>
+                    <TableCell>
+                      {certificate.level && (
+                        <Badge className={getCategoryColor(certificate.level)}>
+                          {certificate.level}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {certificate.status && (
+                        <Badge variant={getStatusColor(certificate.status)}>
+                          {certificate.status}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="capitalize">{certificate.demo}</TableCell>
+                    <TableCell>{formatDate(certificate.startDate)}</TableCell>
+                    <TableCell>{formatDate(certificate.endDate)}</TableCell>
+                    {isAdmin() && <TableCell>{getEmployeeName(certificate.userId)}</TableCell>}
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        {canEditCertificate(certificate) && (
                           <Button
                             size="sm"
-                            variant="destructive"
-                            disabled={deleteLoading === certificate.id}
+                            variant="outline"
+                            onClick={() => handleEdit(certificate)}
                           >
-                            {deleteLoading === certificate.id ? (
-                              <Loader className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
+                            <Edit className="w-4 h-4" />
                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the certificate 
-                              <strong> {certificate.certificateName || certificate.courseName}</strong>.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(certificate.id, certificate)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete Certificate
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                        )}
+                        {canEditCertificate(certificate) && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                disabled={deleteLoading === certificate.id}
+                              >
+                                {deleteLoading === certificate.id ? (
+                                  <Loader className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the certificate 
+                                  <strong> {certificate.certificateName || certificate.courseName}</strong>.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(certificate.id, certificate)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete Certificate
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </ScrollArea>
       </div>
       
       {certificates.length === 0 && (
         <div className="text-center py-12">
-          <FileText className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No certificates</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-2 text-sm font-medium">No certificates</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             Get started by adding your first certificate.
           </p>
         </div>

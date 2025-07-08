@@ -5,13 +5,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import CompanySignup from "./pages/CompanySignup";
+import Dashboard from "./pages/Dashboard";
 import Certificates from "./pages/Certificates";
 import Employees from "./pages/Employees";
+import Roles from "./pages/Roles";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
 import Unauthorized from "./pages/Unauthorized";
@@ -25,7 +28,7 @@ const AppRoutes = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -33,8 +36,8 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/certificates" />} />
-      <Route path="/signup" element={!currentUser ? <CompanySignup /> : <Navigate to="/certificates" />} />
+      <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/dashboard" />} />
+      <Route path="/signup" element={!currentUser ? <CompanySignup /> : <Navigate to="/dashboard" />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       
       {/* Protected routes */}
@@ -43,7 +46,8 @@ const AppRoutes = () => {
           <Layout />
         </ProtectedRoute>
       }>
-        <Route index element={<Navigate to="/certificates" />} />
+        <Route index element={<Navigate to="/dashboard" />} />
+        <Route path="dashboard" element={<Dashboard />} />
         <Route path="analytics" element={
           <ProtectedRoute requireAdmin>
             <Analytics />
@@ -55,11 +59,12 @@ const AppRoutes = () => {
             <Employees />
           </ProtectedRoute>
         } />
-        <Route path="settings" element={
+        <Route path="roles" element={
           <ProtectedRoute requireAdmin>
-            <Settings />
+            <Roles />
           </ProtectedRoute>
         } />
+        <Route path="settings" element={<Settings />} />
       </Route>
       
       {/* Catch all route */}
@@ -70,15 +75,17 @@ const AppRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
+    <ThemeProvider defaultTheme="system" storageKey="lovable-ui-theme">
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AuthProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
