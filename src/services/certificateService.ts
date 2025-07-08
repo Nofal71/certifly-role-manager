@@ -1,93 +1,65 @@
 
-import { collection, doc, addDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import axiosInstance from '../../axiosinstance';
 import { Certificate } from '@/types';
 
-export const getCertificates = async (userId: string, companyId: string, isAdmin: boolean = false) => {
+export interface CreateCertificateData {
+  courseName: string;
+  courseLink?: string;
+  organization?: string;
+  certificateName?: string;
+  level?: string;
+  startDate?: Date;
+  endDate?: Date;
+  status?: string;
+  demo?: string;
+  userId?: number;
+}
+
+export const getAllCertificates = async (): Promise<Certificate[]> => {
   try {
-    let q;
-    if (isAdmin) {
-      // Admin can see all certificates in the company
-      q = query(
-        collection(db, 'certificates'),
-        where('companyId', '==', companyId),
-        orderBy('createdAt', 'desc')
-      );
-    } else {
-      // Employee can only see their own certificates
-      q = query(
-        collection(db, 'certificates'),
-        where('userId', '==', userId),
-        where('companyId', '==', companyId),
-        orderBy('createdAt', 'desc')
-      );
-    }
-    
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as Omit<Certificate, 'id'>;
-      return { id: doc.id, ...data } as Certificate;
-    });
-  } catch (error) {
-    console.error('Error fetching certificates:', error);
-    throw error;
+    const response = await axiosInstance.get('/Certification/all');
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching all certificates:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch certificates');
   }
 };
 
-export const getUserCertificates = async (userId: string) => {
+export const getMyCertificates = async (): Promise<Certificate[]> => {
   try {
-    const q = query(
-      collection(db, 'certificates'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as Omit<Certificate, 'id'>;
-      return { id: doc.id, ...data } as Certificate;
-    });
-  } catch (error) {
-    console.error('Error fetching user certificates:', error);
-    throw error;
+    const response = await axiosInstance.get('/Certification/my');
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching my certificates:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch certificates');
   }
 };
 
-export const addCertificate = async (certificateData: Omit<Certificate, 'id' | 'createdAt' | 'updatedAt'>) => {
+export const createCertificate = async (data: CreateCertificateData) => {
   try {
-    const certificate = {
-      ...certificateData,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    const docRef = await addDoc(collection(db, 'certificates'), certificate);
-    return { id: docRef.id, ...certificate };
-  } catch (error) {
-    console.error('Error adding certificate:', error);
-    throw error;
+    const response = await axiosInstance.post('/Certification/create', data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error creating certificate:', error);
+    throw new Error(error.response?.data?.message || 'Failed to create certificate');
   }
 };
 
-export const updateCertificate = async (certificateId: string, updates: Partial<Omit<Certificate, 'id' | 'createdAt'>>) => {
+export const updateCertificate = async (id: number, data: CreateCertificateData) => {
   try {
-    const certificateRef = doc(db, 'certificates', certificateId);
-    const updateData = {
-      ...updates,
-      updatedAt: new Date()
-    };
-    await updateDoc(certificateRef, updateData);
-  } catch (error) {
+    const response = await axiosInstance.put(`/Certification/${id}`, data);
+    return response.data;
+  } catch (error: any) {
     console.error('Error updating certificate:', error);
-    throw error;
+    throw new Error(error.response?.data?.message || 'Failed to update certificate');
   }
 };
 
-export const deleteCertificate = async (certificateId: string) => {
+export const deleteCertificate = async (id: number) => {
   try {
-    await deleteDoc(doc(db, 'certificates', certificateId));
-  } catch (error) {
+    await axiosInstance.delete(`/Certification/${id}`);
+  } catch (error: any) {
     console.error('Error deleting certificate:', error);
-    throw error;
+    throw new Error(error.response?.data?.message || 'Failed to delete certificate');
   }
 };

@@ -1,13 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { getCertificates, addCertificate, updateCertificate, deleteCertificate } from '@/services/certificateService';
-import { getCompanyUsers } from '@/services/userService';
+import { getAllCertificates, getMyCertificates, createCertificate, updateCertificate, deleteCertificate } from '@/services/certificateService';
+import { getAllEmployees } from '@/services/employeeService';
 import { useAuth } from '@/contexts/AuthContext';
-import { Certificate, User } from '@/types';
+import { Certificate, Employee } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -17,86 +16,77 @@ import { toast } from 'sonner';
 import { FileText, Edit, Trash2, Loader, ExternalLink } from 'lucide-react';
 
 const Certificates: React.FC = () => {
-  const { userProfile, hasPermission } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCertificate, setEditingCertificate] = useState<Certificate | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
-  
-  const isAdmin = hasPermission('manage-users');
-  const canManageCertificates = hasPermission('manage-certificates');
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
     courseName: '',
     courseLink: '',
-    category: 'frontend' as 'frontend' | 'backend' | 'automation' | 'testing' | 'project-management' | 'others',
     organization: '',
     certificateName: '',
-    level: 'beginner' as 'beginner' | 'intermediate' | 'advance',
+    level: '',
     startDate: '',
     endDate: '',
-    status: 'started' as 'started' | 'in-progress' | 'completed' | 'other',
-    output: 'demo' as 'demo' | 'certificate',
-    userId: userProfile?.id || ''
+    status: '',
+    demo: '',
+    userId: currentUser?.id || 0
   });
 
   useEffect(() => {
     loadCertificates();
-    if (isAdmin) {
-      loadUsers();
+    if (isAdmin()) {
+      loadEmployees();
     }
-  }, [userProfile, isAdmin]);
+  }, [currentUser]);
 
   const loadCertificates = async () => {
-    if (!userProfile) return;
-    
     try {
-      const certs = await getCertificates(
-        userProfile.id,
-        userProfile.companyId,
-        isAdmin
-      );
+      let certs;
+      if (isAdmin()) {
+        certs = await getAllCertificates();
+      } else {
+        certs = await getMyCertificates();
+      }
       setCertificates(certs);
-    } catch (error) {
-      toast.error('Failed to load certificates');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load certificates');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadUsers = async () => {
-    if (!userProfile) return;
-    
+  const loadEmployees = async () => {
     try {
-      const companyUsers = await getCompanyUsers(userProfile.companyId);
-      setUsers(companyUsers);
-    } catch (error) {
-      toast.error('Failed to load users');
+      const employeeList = await getAllEmployees();
+      setEmployees(employeeList);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load employees');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userProfile) return;
-
     setSaveLoading(true);
+
     try {
       const certificateData = {
         ...formData,
-        companyId: userProfile.companyId,
-        userId: isAdmin ? formData.userId : userProfile.id,
-        startDate: new Date(formData.startDate),
-        endDate: new Date(formData.endDate)
+        userId: isAdmin() ? formData.userId : currentUser?.id || 0,
+        startDate: formData.startDate ? new Date(formData.startDate) : undefined,
+        endDate: formData.endDate ? new Date(formData.endDate) : undefined
       };
 
       if (editingCertificate) {
         await updateCertificate(editingCertificate.id, certificateData);
         toast.success('Certificate updated successfully');
       } else {
-        await addCertificate(certificateData);
+        await createCertificate(certificateData);
         toast.success('Certificate added successfully');
       }
 
@@ -104,16 +94,15 @@ const Certificates: React.FC = () => {
       setEditingCertificate(null);
       resetForm();
       loadCertificates();
-    } catch (error) {
-      toast.error('Failed to save certificate');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save certificate');
     } finally {
       setSaveLoading(false);
     }
   };
 
   const handleEdit = (certificate: Certificate) => {
-    // Check if user can edit this certificate
-    if (!canManageCertificates && certificate.userId !== userProfile?.id) {
+    if (!canEditCertificate(certificate)) {
       toast.error('You do not have permission to edit this certificate');
       return;
     }
@@ -121,23 +110,21 @@ const Certificates: React.FC = () => {
     setEditingCertificate(certificate);
     setFormData({
       courseName: certificate.courseName,
-      courseLink: certificate.courseLink,
-      category: certificate.category,
-      organization: certificate.organization,
-      certificateName: certificate.certificateName,
-      level: certificate.level,
-      startDate: certificate.startDate ? (() => { const d = new Date(certificate.startDate); return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0]; })() : '',
-      endDate: certificate.endDate ? (() => { const d = new Date(certificate.endDate); return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0]; })() : '',
-      status: certificate.status,
-      output: certificate.output,
+      courseLink: certificate.courseLink || '',
+      organization: certificate.organization || '',
+      certificateName: certificate.certificateName || '',
+      level: certificate.level || '',
+      startDate: certificate.startDate ? new Date(certificate.startDate).toISOString().split('T')[0] : '',
+      endDate: certificate.endDate ? new Date(certificate.endDate).toISOString().split('T')[0] : '',
+      status: certificate.status || '',
+      demo: certificate.demo || '',
       userId: certificate.userId
     });
     setDialogOpen(true);
   };
 
-  const handleDelete = async (certificateId: string, certificate: Certificate) => {
-    // Check if user can delete this certificate
-    if (!canManageCertificates && certificate.userId !== userProfile?.id) {
+  const handleDelete = async (certificateId: number, certificate: Certificate) => {
+    if (!canEditCertificate(certificate)) {
       toast.error('You do not have permission to delete this certificate');
       return;
     }
@@ -147,8 +134,8 @@ const Certificates: React.FC = () => {
       await deleteCertificate(certificateId);
       toast.success('Certificate deleted successfully');
       loadCertificates();
-    } catch (error) {
-      toast.error('Failed to delete certificate');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete certificate');
     } finally {
       setDeleteLoading(null);
     }
@@ -158,58 +145,48 @@ const Certificates: React.FC = () => {
     setFormData({
       courseName: '',
       courseLink: '',
-      category: 'frontend',
       organization: '',
       certificateName: '',
-      level: 'beginner',
+      level: '',
       startDate: '',
       endDate: '',
-      status: 'started',
-      output: 'demo',
-      userId: userProfile?.id || ''
+      status: '',
+      demo: '',
+      userId: currentUser?.id || 0
     });
   };
 
+  const canEditCertificate = (certificate: Certificate) => {
+    return isAdmin() || certificate.userId === currentUser?.id;
+  };
+
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'completed': return 'default';
-      case 'in-progress': return 'secondary';
+      case 'in progress': return 'secondary';
       case 'started': return 'outline';
       case 'other': return 'destructive';
       default: return 'outline';
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'frontend': return 'bg-blue-100 text-blue-800';
-      case 'backend': return 'bg-green-100 text-green-800';
-      case 'automation': return 'bg-purple-100 text-purple-800';
-      case 'testing': return 'bg-yellow-100 text-yellow-800';
-      case 'project-management': return 'bg-orange-100 text-orange-800';
-      case 'others': return 'bg-gray-100 text-gray-800';
+  const getCategoryColor = (level: string) => {
+    switch (level?.toLowerCase()) {
+      case 'beginner': return 'bg-green-100 text-green-800';
+      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
+      case 'advance': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getUserName = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    return user ? user.name : 'Unknown User';
+  const getEmployeeName = (userId: number) => {
+    const employee = employees.find(e => e.user.id === userId);
+    return employee ? employee.fullName : 'Unknown Employee';
   };
 
   const formatDate = (date: any) => {
     if (!date) return 'N/A';
-    if (typeof date === 'object' && 'seconds' in date) {
-      return new Date(Number(date.seconds) * 1000).toLocaleDateString();
-    }
-    if (date instanceof Date) {
-      return date.toLocaleDateString();
-    }
-    return String(date);
-  };
-
-  const canEditCertificate = (certificate: Certificate) => {
-    return canManageCertificates || certificate.userId === userProfile?.id;
+    return new Date(date).toLocaleDateString();
   };
 
   if (loading) {
@@ -226,7 +203,7 @@ const Certificates: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Certificates</h1>
           <p className="text-gray-600">
-            {isAdmin ? 'Manage all company certificates' : 'Manage your certificates'}
+            {isAdmin() ? 'Manage all company certificates' : 'Manage your certificates'}
           </p>
         </div>
         
@@ -270,52 +247,30 @@ const Certificates: React.FC = () => {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value: any) => setFormData(prev => ({ ...prev, category: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="frontend">Frontend</SelectItem>
-                      <SelectItem value="backend">Backend</SelectItem>
-                      <SelectItem value="automation">Automation</SelectItem>
-                      <SelectItem value="testing">Testing</SelectItem>
-                      <SelectItem value="project-management">Project Management</SelectItem>
-                      <SelectItem value="others">Others</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
                   <Label htmlFor="organization">Organization</Label>
                   <Input
                     id="organization"
                     value={formData.organization}
                     onChange={(e) => setFormData(prev => ({ ...prev, organization: e.target.value }))}
-                    required
                   />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+                
                 <div className="space-y-2">
                   <Label htmlFor="certificateName">Certificate Name</Label>
                   <Input
                     id="certificateName"
                     value={formData.certificateName}
                     onChange={(e) => setFormData(prev => ({ ...prev, certificateName: e.target.value }))}
-                    required
                   />
                 </div>
-                
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="level">Level</Label>
                   <Select
                     value={formData.level}
-                    onValueChange={(value: any) => setFormData(prev => ({ ...prev, level: value }))}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, level: value }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select level" />
@@ -324,6 +279,24 @@ const Certificates: React.FC = () => {
                       <SelectItem value="beginner">Beginner</SelectItem>
                       <SelectItem value="intermediate">Intermediate</SelectItem>
                       <SelectItem value="advance">Advance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Started">Started</SelectItem>
+                      <SelectItem value="In progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -337,7 +310,6 @@ const Certificates: React.FC = () => {
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                    required
                   />
                 </div>
                 
@@ -348,61 +320,40 @@ const Certificates: React.FC = () => {
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                    required
                   />
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="started">Started</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="output">Output</Label>
-                  <Select
-                    value={formData.output}
-                    onValueChange={(value: any) => setFormData(prev => ({ ...prev, output: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="demo">Demo</SelectItem>
-                      <SelectItem value="certificate">Certificate</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="demo">Output</Label>
+                <Select
+                  value={formData.demo}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, demo: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select output type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="demo">Demo</SelectItem>
+                    <SelectItem value="certificate">Certificate</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
-              {isAdmin && (
+              {isAdmin() && (
                 <div className="space-y-2">
-                  <Label htmlFor="userId">Assign to User</Label>
+                  <Label htmlFor="userId">Assign to Employee</Label>
                   <Select
-                    value={formData.userId}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, userId: value }))}
+                    value={formData.userId.toString()}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, userId: parseInt(value) }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select user" />
+                      <SelectValue placeholder="Select employee" />
                     </SelectTrigger>
                     <SelectContent>
-                      {users.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name} ({user.email})
+                      {employees.map((employee) => (
+                        <SelectItem key={employee.id} value={employee.user.id.toString()}>
+                          {employee.fullName} ({employee.user.email})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -430,14 +381,13 @@ const Certificates: React.FC = () => {
             <TableRow>
               <TableHead>Course Name</TableHead>
               <TableHead>Certificate Name</TableHead>
-              <TableHead>Category</TableHead>
               <TableHead>Organization</TableHead>
               <TableHead>Level</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Output</TableHead>
               <TableHead>Start Date</TableHead>
               <TableHead>End Date</TableHead>
-              {isAdmin && <TableHead>User</TableHead>}
+              {isAdmin() && <TableHead>Employee</TableHead>}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -460,22 +410,25 @@ const Certificates: React.FC = () => {
                   </div>
                 </TableCell>
                 <TableCell>{certificate.certificateName}</TableCell>
-                <TableCell>
-                  <Badge className={getCategoryColor(certificate.category)}>
-                    {certificate.category.replace('-', ' ')}
-                  </Badge>
-                </TableCell>
                 <TableCell>{certificate.organization}</TableCell>
-                <TableCell className="capitalize">{certificate.level}</TableCell>
                 <TableCell>
-                  <Badge variant={getStatusColor(certificate.status)}>
-                    {certificate.status.replace('-', ' ')}
-                  </Badge>
+                  {certificate.level && (
+                    <Badge className={getCategoryColor(certificate.level)}>
+                      {certificate.level}
+                    </Badge>
+                  )}
                 </TableCell>
-                <TableCell className="capitalize">{certificate.output}</TableCell>
+                <TableCell>
+                  {certificate.status && (
+                    <Badge variant={getStatusColor(certificate.status)}>
+                      {certificate.status}
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell className="capitalize">{certificate.demo}</TableCell>
                 <TableCell>{formatDate(certificate.startDate)}</TableCell>
                 <TableCell>{formatDate(certificate.endDate)}</TableCell>
-                {isAdmin && <TableCell>{getUserName(certificate.userId)}</TableCell>}
+                {isAdmin() && <TableCell>{getEmployeeName(certificate.userId)}</TableCell>}
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
                     {canEditCertificate(certificate) && (
@@ -507,7 +460,7 @@ const Certificates: React.FC = () => {
                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                             <AlertDialogDescription>
                               This action cannot be undone. This will permanently delete the certificate 
-                              <strong> {certificate.certificateName}</strong>.
+                              <strong> {certificate.certificateName || certificate.courseName}</strong>.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

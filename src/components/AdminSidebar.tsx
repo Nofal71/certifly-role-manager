@@ -19,14 +19,14 @@ import { Button } from '@/components/ui/button';
 import { BarChart, Users, FileText, Settings, LogOut, User } from 'lucide-react';
 
 const AdminSidebar: React.FC = () => {
-  const { userProfile, company, logout } = useAuth();
+  const { currentUser, logout } = useAuth();
   const location = useLocation();
   const { state } = useSidebar();
 
   const navigation = [
     { name: 'Analytics', href: '/analytics', icon: BarChart },
     { name: 'Certificates', href: '/certificates', icon: FileText },
-    { name: 'Users', href: '/users', icon: Users },
+    { name: 'Employees', href: '/employees', icon: Users },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -41,7 +41,7 @@ const AdminSidebar: React.FC = () => {
           </div>
           {state === 'expanded' && (
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold">{company?.name}</span>
+              <span className="truncate font-semibold">{currentUser?.company?.companyName}</span>
               <span className="truncate text-xs">Certificate Manager</span>
             </div>
           )}
@@ -78,7 +78,7 @@ const AdminSidebar: React.FC = () => {
               <User className="h-4 w-4 text-muted-foreground" />
               {state === 'expanded' && (
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{userProfile?.name}</span>
+                  <span className="truncate font-medium">{currentUser?.email}</span>
                   <span className="truncate text-xs text-muted-foreground">Admin</span>
                 </div>
               )}

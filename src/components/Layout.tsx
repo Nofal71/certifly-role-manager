@@ -7,23 +7,18 @@ import { LogOut, Users, FileText, Settings, User } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 
 const Layout: React.FC = () => {
-  const { userProfile, company, logout, hasPermission } = useAuth();
+  const { currentUser, logout, isAdmin } = useAuth();
   const location = useLocation();
 
-  // Check if user is admin
-  const isAdmin = hasPermission('manage-users') && hasPermission('manage-roles');
-
   // Use admin layout for admin users
-  if (isAdmin) {
+  if (isAdmin()) {
     return <AdminLayout />;
   }
 
   // Regular layout for employee users
   const navigation = [
-    { name: 'Certificates', href: '/certificates', icon: FileText, permission: 'manage-certificates' },
+    { name: 'Certificates', href: '/certificates', icon: FileText },
   ];
-
-  const filteredNavigation = navigation.filter(item => hasPermission(item.permission));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -32,10 +27,10 @@ const Layout: React.FC = () => {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="text-xl font-bold text-gray-900">{company?.name}</h1>
+                <h1 className="text-xl font-bold text-gray-900">{currentUser?.company?.companyName}</h1>
               </div>
               <div className="hidden md:ml-6 md:flex md:space-x-8">
-                {filteredNavigation.map((item) => {
+                {navigation.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link
@@ -57,7 +52,7 @@ const Layout: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <User className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-700">{userProfile?.name}</span>
+                <span className="text-sm text-gray-700">{currentUser?.email}</span>
               </div>
               <Button
                 variant="ghost"

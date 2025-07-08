@@ -2,21 +2,23 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginUser, resetPassword } from '@/services/authService';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import axiosInstance from '../../axiosinstance'
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    newPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const navigate = useNavigate();
+  const { setCurrentUser } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,23 +26,17 @@ const Login: React.FC = () => {
 
     try {
       if (resetMode) {
-        await resetPassword(formData.email);
-        toast.success('Password reset email sent! Check your inbox.');
+        await resetPassword(formData.newPassword);
+        toast.success('Password reset successfully!');
         setResetMode(false);
       } else {
-        await loginUser(formData.email, formData.password);
-        const response = await axiosInstance.post('/Auth/signin', {
-          email: formData.email,
-          password: formData.password
-        })
-        const token = response.data.token;
-        localStorage.setItem('token', token);
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        const response = await loginUser(formData.email, formData.password);
+        setCurrentUser(response.user);
         toast.success('Login successful!');
         navigate('/certificates');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Login failed');
+      toast.error(error.message || 'Operation failed');
     } finally {
       setLoading(false);
     }
@@ -62,27 +58,42 @@ const Login: React.FC = () => {
           </CardTitle>
           <CardDescription className="text-center">
             {resetMode 
-              ? 'Enter your email to receive a password reset link'
+              ? 'Enter your new password'
               : 'Enter your credentials to access your account'
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Enter your email"
-              />
-            </div>
-            
             {!resetMode && (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Enter your email"
+                />
+              </div>
+            )}
+            
+            {resetMode ? (
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  name="newPassword"
+                  type="password"
+                  required
+                  value={formData.newPassword}
+                  onChange={handleChange}
+                  placeholder="Enter your new password"
+                />
+              </div>
+            ) : (
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -99,8 +110,8 @@ const Login: React.FC = () => {
             
             <Button type="submit" className="w-full" disabled={loading}>
               {loading 
-                ? (resetMode ? 'Sending Reset Link...' : 'Signing In...') 
-                : (resetMode ? 'Send Reset Link' : 'Sign In')
+                ? (resetMode ? 'Resetting Password...' : 'Signing In...') 
+                : (resetMode ? 'Reset Password' : 'Sign In')
               }
             </Button>
           </form>
@@ -112,7 +123,7 @@ const Login: React.FC = () => {
               onClick={() => setResetMode(!resetMode)}
               className="text-sm"
             >
-              {resetMode ? 'Back to Sign In' : 'Forgot Password?'}
+              {resetMode ? 'Back to Sign In' : 'Reset Password?'}
             </Button>
             
             <p className="text-sm text-gray-600">

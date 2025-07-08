@@ -11,9 +11,9 @@ import { toast } from 'sonner';
 const CompanySignup: React.FC = () => {
   const [formData, setFormData] = useState({
     companyName: '',
-    adminName: '',
-    email: '',
-    password: '',
+    ownerName: '',
+    adminEmail: '',
+    adminPassword: '',
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
@@ -22,16 +22,21 @@ const CompanySignup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.adminPassword !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
 
     setLoading(true);
     try {
-      await signupCompany(formData);
-      toast.success('Company registered successfully! Welcome to your dashboard.');
-      navigate('/certificates');
+      await signupCompany({
+        companyName: formData.companyName,
+        ownerName: formData.ownerName,
+        adminEmail: formData.adminEmail,
+        adminPassword: formData.adminPassword
+      });
+      toast.success('Company registered successfully! Please login to continue.');
+      navigate('/login');
     } catch (error: any) {
       toast.error(error.message || 'Failed to create company account');
     } finally {
@@ -71,39 +76,39 @@ const CompanySignup: React.FC = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="adminName">Admin Name</Label>
+              <Label htmlFor="ownerName">Owner Name</Label>
               <Input
-                id="adminName"
-                name="adminName"
+                id="ownerName"
+                name="ownerName"
                 type="text"
                 required
-                value={formData.adminName}
+                value={formData.ownerName}
                 onChange={handleChange}
-                placeholder="Enter admin full name"
+                placeholder="Enter owner full name"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="adminEmail">Admin Email</Label>
               <Input
-                id="email"
-                name="email"
+                id="adminEmail"
+                name="adminEmail"
                 type="email"
                 required
-                value={formData.email}
+                value={formData.adminEmail}
                 onChange={handleChange}
                 placeholder="Enter admin email"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="adminPassword">Password</Label>
               <Input
-                id="password"
-                name="password"
+                id="adminPassword"
+                name="adminPassword"
                 type="password"
                 required
-                value={formData.password}
+                value={formData.adminPassword}
                 onChange={handleChange}
                 placeholder="Create a password"
               />

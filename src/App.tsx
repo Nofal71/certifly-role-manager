@@ -10,7 +10,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import CompanySignup from "./pages/CompanySignup";
 import Certificates from "./pages/Certificates";
-import Users from "./pages/Users";
+import Employees from "./pages/Employees";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
 import Unauthorized from "./pages/Unauthorized";
@@ -44,22 +44,18 @@ const AppRoutes = () => {
       }>
         <Route index element={<Navigate to="/certificates" />} />
         <Route path="analytics" element={
-          <ProtectedRoute requiredPermission="manage-users">
+          <ProtectedRoute requireAdmin>
             <Analytics />
           </ProtectedRoute>
         } />
-        <Route path="certificates" element={
-          <ProtectedRoute requiredPermission="manage-certificates">
-            <Certificates />
-          </ProtectedRoute>
-        } />
-        <Route path="users" element={
-          <ProtectedRoute requiredPermission="manage-users">
-            <Users />
+        <Route path="certificates" element={<Certificates />} />
+        <Route path="employees" element={
+          <ProtectedRoute requireAdmin>
+            <Employees />
           </ProtectedRoute>
         } />
         <Route path="settings" element={
-          <ProtectedRoute requiredPermission="manage-roles">
+          <ProtectedRoute requireAdmin>
             <Settings />
           </ProtectedRoute>
         } />
