@@ -9,7 +9,7 @@ import { LogOut } from 'lucide-react';
 import AdminSidebar from './AdminSidebar';
 
 const AdminLayout: React.FC = () => {
-  const { logout, userProfile, company } = useAuth();
+  const { logout, currentUser } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -24,11 +24,11 @@ const AdminLayout: React.FC = () => {
             <div className="flex items-center">
               <SidebarTrigger />
               <div className="ml-4">
-                <h1 className="text-lg font-semibold">{company?.name || 'Certificate Management System'}</h1>
+                <h1 className="text-lg font-semibold">{currentUser?.company?.companyName || 'Certificate Management System'}</h1>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{userProfile?.name}</span>
+              <span className="text-sm text-gray-600">{currentUser?.email}</span>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="ghost" size="sm">
