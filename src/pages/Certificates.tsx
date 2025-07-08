@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { FileText, Edit, Trash2, Loader, ExternalLink, Plus } from 'lucide-react';
 
@@ -375,116 +374,114 @@ const Certificates: React.FC = () => {
         </Dialog>
       </div>
       
-      <div className="border rounded-lg">
-        <ScrollArea className="w-full">
-          <div className="min-w-[1200px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[200px]">Course Name</TableHead>
-                  <TableHead className="min-w-[200px]">Certificate Name</TableHead>
-                  <TableHead className="min-w-[150px]">Organization</TableHead>
-                  <TableHead className="min-w-[100px]">Level</TableHead>
-                  <TableHead className="min-w-[120px]">Status</TableHead>
-                  <TableHead className="min-w-[100px]">Output</TableHead>
-                  <TableHead className="min-w-[120px]">Start Date</TableHead>
-                  <TableHead className="min-w-[120px]">End Date</TableHead>
-                  {isAdmin() && <TableHead className="min-w-[150px]">Employee</TableHead>}
-                  <TableHead className="text-right min-w-[120px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {certificates.map((certificate) => (
-                  <TableRow key={certificate.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center space-x-2">
-                        <span className="truncate">{certificate.courseName}</span>
-                        {certificate.courseLink && (
-                          <a 
-                            href={certificate.courseLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-primary hover:text-primary/80"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{certificate.certificateName}</TableCell>
-                    <TableCell>{certificate.organization}</TableCell>
-                    <TableCell>
-                      {certificate.level && (
-                        <Badge className={getCategoryColor(certificate.level)}>
-                          {certificate.level}
-                        </Badge>
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[200px]">Course Name</TableHead>
+                <TableHead className="min-w-[200px]">Certificate Name</TableHead>
+                <TableHead className="min-w-[150px]">Organization</TableHead>
+                <TableHead className="min-w-[100px]">Level</TableHead>
+                <TableHead className="min-w-[120px]">Status</TableHead>
+                <TableHead className="min-w-[100px]">Output</TableHead>
+                <TableHead className="min-w-[120px]">Start Date</TableHead>
+                <TableHead className="min-w-[120px]">End Date</TableHead>
+                {isAdmin() && <TableHead className="min-w-[150px]">Employee</TableHead>}
+                <TableHead className="text-right min-w-[120px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {certificates.map((certificate) => (
+                <TableRow key={certificate.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center space-x-2">
+                      <span className="truncate">{certificate.courseName}</span>
+                      {certificate.courseLink && (
+                        <a 
+                          href={certificate.courseLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:text-primary/80"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      {certificate.status && (
-                        <Badge variant={getStatusColor(certificate.status)}>
-                          {certificate.status}
-                        </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell>{certificate.certificateName}</TableCell>
+                  <TableCell>{certificate.organization}</TableCell>
+                  <TableCell>
+                    {certificate.level && (
+                      <Badge className={getCategoryColor(certificate.level)}>
+                        {certificate.level}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {certificate.status && (
+                      <Badge variant={getStatusColor(certificate.status)}>
+                        {certificate.status}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="capitalize">{certificate.demo}</TableCell>
+                  <TableCell>{formatDate(certificate.startDate)}</TableCell>
+                  <TableCell>{formatDate(certificate.endDate)}</TableCell>
+                  {isAdmin() && <TableCell>{getEmployeeName(certificate.userId)}</TableCell>}
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      {canEditCertificate(certificate) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(certificate)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
                       )}
-                    </TableCell>
-                    <TableCell className="capitalize">{certificate.demo}</TableCell>
-                    <TableCell>{formatDate(certificate.startDate)}</TableCell>
-                    <TableCell>{formatDate(certificate.endDate)}</TableCell>
-                    {isAdmin() && <TableCell>{getEmployeeName(certificate.userId)}</TableCell>}
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        {canEditCertificate(certificate) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(certificate)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {canEditCertificate(certificate) && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                disabled={deleteLoading === certificate.id}
+                      {canEditCertificate(certificate) && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={deleteLoading === certificate.id}
+                            >
+                              {deleteLoading === certificate.id ? (
+                                <Loader className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the certificate 
+                                <strong> {certificate.certificateName || certificate.courseName}</strong>.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(certificate.id, certificate)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                {deleteLoading === certificate.id ? (
-                                  <Loader className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="w-4 h-4" />
-                                )}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete the certificate 
-                                  <strong> {certificate.certificateName || certificate.courseName}</strong>.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(certificate.id, certificate)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete Certificate
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </ScrollArea>
+                                Delete Certificate
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
       
       {certificates.length === 0 && (

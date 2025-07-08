@@ -50,7 +50,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
@@ -126,9 +126,9 @@ const Login: React.FC = () => {
               {resetMode ? 'Back to Sign In' : 'Reset Password?'}
             </Button>
             
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Don't have a company account?{' '}
-              <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link to="/signup" className="font-medium text-primary hover:text-primary/80">
                 Sign up here
               </Link>
             </p>
