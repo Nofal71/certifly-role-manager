@@ -70,7 +70,7 @@ const Employees: React.FC = () => {
 
     try {
       if (editingEmployee) {
-        await updateEmployee(editingEmployee.id, formData);
+        await updateEmployee(editingEmployee.userId, formData);
         toast.success("Employee updated successfully!");
       } else {
         await createEmployee(formData);
