@@ -31,7 +31,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = (): boolean => {
-    return currentUser?.role?.toLowerCase() === 'admin';
+    const userRole = currentUser?.role?.toLowerCase();
+    return userRole === 'admin' || userRole === 'owner';
   };
 
   useEffect(() => {

@@ -8,7 +8,7 @@ import EmployeeLayout from './EmployeeLayout';
 const Layout: React.FC = () => {
   const { isAdmin } = useAuth();
 
-  // Use admin layout for admin users
+  // Use admin layout for both admin and owner users
   if (isAdmin()) {
     return <AdminLayout />;
   }
