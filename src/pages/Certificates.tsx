@@ -24,7 +24,7 @@ const Certificates: React.FC = () => {
   const [createLoading, setCreateLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
   const [updateLoading, setUpdateLoading] = useState<number | null>(null);
-  
+
   const [formData, setFormData] = useState({
     courseName: '',
     courseLink: '',
@@ -161,7 +161,7 @@ const Certificates: React.FC = () => {
           <h1 className="text-3xl font-bold">Certificates</h1>
           <p className="text-muted-foreground">Track and manage your professional certifications</p>
         </div>
-        
+
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => { resetForm(); setEditingCertificate(null); }}>
@@ -175,7 +175,7 @@ const Certificates: React.FC = () => {
                 {editingCertificate ? 'Edit Certificate' : 'Add New Certificate'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -187,7 +187,7 @@ const Certificates: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="organization">Organization</Label>
                   <Input
@@ -207,7 +207,7 @@ const Certificates: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, certificateName: e.target.value }))}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="level">Level</Label>
                   <Select
@@ -248,7 +248,7 @@ const Certificates: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="endDate">End Date</Label>
                   <Input
@@ -287,7 +287,7 @@ const Certificates: React.FC = () => {
                   rows={3}
                 />
               </div>
-              
+
               <div className="flex justify-end space-x-2 pt-4">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
@@ -303,117 +303,114 @@ const Certificates: React.FC = () => {
           </DialogContent>
         </Dialog>
       </div>
-      
+
       <div className="border rounded-lg">
-        <ScrollArea className="w-full">
-          <div className="min-w-[1200px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Course Name</TableHead>
-                  <TableHead>Organization</TableHead>
-                  <TableHead>Certificate</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Course Link</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {certificates.map((certificate) => (
-                  <TableRow key={certificate.id}>
-                    <TableCell className="font-medium">{certificate.courseName}</TableCell>
-                    <TableCell>{certificate.organization || '-'}</TableCell>
-                    <TableCell>{certificate.certificateName || '-'}</TableCell>
-                    <TableCell>{certificate.level || '-'}</TableCell>
-                    <TableCell>
-                      {certificate.startDate 
-                        ? new Date(certificate.startDate).toLocaleDateString() 
-                        : '-'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      {certificate.endDate 
-                        ? new Date(certificate.endDate).toLocaleDateString() 
-                        : '-'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(certificate.status || 'Not Started')}>
-                        {certificate.status || 'Not Started'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {certificate.courseLink ? (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => window.open(certificate.courseLink, '_blank')}
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(certificate)}
-                          disabled={updateLoading === certificate.id}
-                        >
-                          {updateLoading === certificate.id ? (
-                            <Loader className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Edit className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              disabled={deleteLoading === certificate.id}
+        <div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Course Name</TableHead>
+                <TableHead>Organization</TableHead>
+                <TableHead>Certificate</TableHead>
+                <TableHead>Level</TableHead>
+                <TableHead>Start Date</TableHead>
+                <TableHead>End Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Course Link</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {certificates.map((certificate) => (
+                <TableRow key={certificate.id}>
+                  <TableCell className="font-medium">{certificate.courseName}</TableCell>
+                  <TableCell>{certificate.organization || '-'}</TableCell>
+                  <TableCell>{certificate.certificateName || '-'}</TableCell>
+                  <TableCell>{certificate.level || '-'}</TableCell>
+                  <TableCell>
+                    {certificate.startDate
+                      ? new Date(certificate.startDate).toLocaleDateString()
+                      : '-'
+                    }
+                  </TableCell>
+                  <TableCell>
+                    {certificate.endDate
+                      ? new Date(certificate.endDate).toLocaleDateString()
+                      : '-'
+                    }
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(certificate.status || 'Not Started')}>
+                      {certificate.status || 'Not Started'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {certificate.courseLink ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(certificate.courseLink, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(certificate)}
+                        disabled={updateLoading === certificate.id}
+                      >
+                        {updateLoading === certificate.id ? (
+                          <Loader className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Edit className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={deleteLoading === certificate.id}
+                          >
+                            {deleteLoading === certificate.id ? (
+                              <Loader className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the certificate
+                              <strong> {certificate.courseName}</strong> and remove it from our records.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteCertificate(certificate.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                              {deleteLoading === certificate.id ? (
-                                <Loader className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-4 h-4" />
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the certificate 
-                                <strong> {certificate.courseName}</strong> and remove it from our records.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteCertificate(certificate.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete Certificate
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+                              Delete Certificate
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-      
+
       {certificates.length === 0 && (
         <div className="text-center py-12">
           <Award className="mx-auto h-12 w-12 text-muted-foreground" />
