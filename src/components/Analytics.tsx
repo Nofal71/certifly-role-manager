@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { getAllCertificates, getMyCertificates } from '@/services/certificateService';
+import { getAllCertificates } from '@/services/certificateService';
 import { getAllEmployees } from '@/services/employeeService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Certificate, Employee } from '@/types';
@@ -22,15 +21,14 @@ const Analytics: React.FC = () => {
     if (!currentUser) return;
     
     try {
-      let certsData;
-      if (currentUser.role?.toLowerCase() === 'admin') {
-        certsData = await getAllCertificates();
-        const employeesData = await getAllEmployees();
-        setEmployees(employeesData);
-      } else {
-        certsData = await getMyCertificates();
-      }
+      // Since analytics is only for admin/owner, we always fetch all data
+      const [certsData, employeesData] = await Promise.all([
+        getAllCertificates(),
+        getAllEmployees()
+      ]);
+      
       setCertificates(certsData);
+      setEmployees(employeesData);
     } catch (error) {
       console.error('Error loading analytics data:', error);
     } finally {
@@ -209,25 +207,23 @@ const Analytics: React.FC = () => {
       </div>
 
       {/* Top Employees */}
-      {employees.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Employees by Certificates</CardTitle>
-            <CardDescription>Employees with the most certificates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={getEmployeesWithMostCertificates()}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="certificates" fill="#82ca9d" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Employees by Certificates</CardTitle>
+          <CardDescription>Employees with the most certificates</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={getEmployeesWithMostCertificates()}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="certificates" fill="#82ca9d" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 };
