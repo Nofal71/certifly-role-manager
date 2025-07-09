@@ -67,7 +67,7 @@ const Roles: React.FC = () => {
                 <Badge variant="secondary">System Role</Badge>
               </div>
               <CardDescription>
-                Role ID: {role.id}
+                System role with specific permissions and access levels
               </CardDescription>
             </CardHeader>
             <CardContent>

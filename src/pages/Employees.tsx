@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getAllEmployees, createEmployee, updateEmployee, deleteEmployee, getAllRoles } from '@/services/employeeService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { Users as UsersIcon, UserPlus, Trash2, Loader, Edit } from 'lucide-react';
 
@@ -42,7 +42,7 @@ const Employees: React.FC = () => {
   const loadEmployees = async () => {
     try {
       const employeeList = await getAllEmployees();
-      // Filter out the current logged-in user and Owner role accounts
+      // Filter out the current logged-in user and Owner role accounts only
       const filteredEmployees = employeeList.filter(emp => 
         emp.user.id !== currentUser?.id && 
         emp.user.role.toLowerCase() !== 'owner'
@@ -151,7 +151,7 @@ const Employees: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-full overflow-hidden">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Employees</h1>
@@ -252,82 +252,87 @@ const Employees: React.FC = () => {
         </Dialog>
       </div>
       
-      <div className="border rounded-lg">
-        <ScrollArea className="w-full">
-          <div className="min-w-[800px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employees.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell className="font-medium">{employee.fullName}</TableCell>
-                    <TableCell>{employee.user.email}</TableCell>
-                    <TableCell>{employee.department}</TableCell>
-                    <TableCell>{employee.user.role}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(employee)}
-                          disabled={updateLoading === employee.id}
-                        >
-                          {updateLoading === employee.id ? (
-                            <Loader className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Edit className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              disabled={deleteLoading === employee.id}
+      <div className="w-full overflow-hidden border rounded-lg">
+        <div className="overflow-x-auto">
+          <Table className="w-full">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[150px]">Name</TableHead>
+                <TableHead className="min-w-[200px]">Email</TableHead>
+                <TableHead className="min-w-[150px]">Department</TableHead>
+                <TableHead className="min-w-[100px]">Role</TableHead>
+                <TableHead className="min-w-[120px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {employees.map((employee) => (
+                <TableRow key={employee.id}>
+                  <TableCell className="font-medium">{employee.fullName}</TableCell>
+                  <TableCell className="break-all">{employee.user.email}</TableCell>
+                  <TableCell>{employee.department}</TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      employee.user.role.toLowerCase() === 'admin' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {employee.user.role}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(employee)}
+                        disabled={updateLoading === employee.id}
+                      >
+                        {updateLoading === employee.id ? (
+                          <Loader className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Edit className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={deleteLoading === employee.id}
+                          >
+                            {deleteLoading === employee.id ? (
+                              <Loader className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the employee 
+                              <strong> {employee.fullName}</strong> and remove their data from our servers.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteEmployee(employee.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                              {deleteLoading === employee.id ? (
-                                <Loader className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-4 h-4" />
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the employee 
-                                <strong> {employee.fullName}</strong> and remove their data from our servers.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteEmployee(employee.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete Employee
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+                              Delete Employee
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
       
       {employees.length === 0 && (
