@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { getAllCertificates, createCertificate, updateCertificate, deleteCertificate } from '@/services/certificateService';
+import { getAllCertificates, getMyCertificates, createCertificate, updateCertificate, deleteCertificate, getAllUsers } from '@/services/certificateService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Certificate } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Award, Plus, Trash2, Loader, Edit, ExternalLink } from 'lucide-react';
@@ -18,6 +18,7 @@ import { Award, Plus, Trash2, Loader, Edit, ExternalLink } from 'lucide-react';
 const Certificates: React.FC = () => {
   const { currentUser, isAdmin } = useAuth();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCertificate, setEditingCertificate] = useState<Certificate | null>(null);
@@ -34,21 +35,39 @@ const Certificates: React.FC = () => {
     startDate: '',
     endDate: '',
     status: 'In Progress',
-    demo: ''
+    demo: '',
+    userId: ''
   });
 
   useEffect(() => {
     loadCertificates();
-  }, []);
+    if (isAdmin()) {
+      loadUsers();
+    }
+  }, [isAdmin]);
 
   const loadCertificates = async () => {
     try {
-      const certificateList = await getAllCertificates();
+      let certificateList;
+      if (isAdmin()) {
+        certificateList = await getAllCertificates();
+      } else {
+        certificateList = await getMyCertificates();
+      }
       setCertificates(certificateList);
     } catch (error: any) {
       toast.error(error.message || "Failed to load certificates");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      const userList = await getAllUsers();
+      setUsers(userList);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to load users");
     }
   };
 
@@ -66,7 +85,13 @@ const Certificates: React.FC = () => {
         ...formData,
         startDate: formData.startDate ? new Date(formData.startDate) : undefined,
         endDate: formData.endDate ? new Date(formData.endDate) : undefined,
+        userId: isAdmin() && formData.userId ? parseInt(formData.userId) : undefined,
       };
+
+      // Remove userId from submitData if it's undefined or empty
+      if (!submitData.userId) {
+        delete submitData.userId;
+      }
 
       if (editingCertificate) {
         await updateCertificate(editingCertificate.id, submitData);
@@ -101,7 +126,8 @@ const Certificates: React.FC = () => {
       startDate: certificate.startDate ? new Date(certificate.startDate).toISOString().split('T')[0] : '',
       endDate: certificate.endDate ? new Date(certificate.endDate).toISOString().split('T')[0] : '',
       status: certificate.status || 'In Progress',
-      demo: certificate.demo || ''
+      demo: certificate.demo || '',
+      userId: certificate.userId?.toString() || ''
     });
     setDialogOpen(true);
   };
@@ -129,7 +155,8 @@ const Certificates: React.FC = () => {
       startDate: '',
       endDate: '',
       status: 'In Progress',
-      demo: ''
+      demo: '',
+      userId: ''
     });
   };
 
@@ -159,7 +186,9 @@ const Certificates: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Certificates</h1>
-          <p className="text-muted-foreground">Track and manage your professional certifications</p>
+          <p className="text-muted-foreground">
+            {isAdmin() ? 'Manage all certificates' : 'Track and manage your professional certifications'}
+          </p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -177,6 +206,28 @@ const Certificates: React.FC = () => {
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isAdmin() && (
+                <div className="space-y-2">
+                  <Label htmlFor="userId">Select User *</Label>
+                  <Select
+                    value={formData.userId}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, userId: value }))}
+                    required={!editingCertificate}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((user) => (
+                        <SelectItem key={user.userId} value={user.userId.toString()}>
+                          {user.fullName} ({user.user.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="courseName">Course Name *</Label>
@@ -304,111 +355,115 @@ const Certificates: React.FC = () => {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg">
-        <div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Course Name</TableHead>
-                <TableHead>Organization</TableHead>
-                <TableHead>Certificate</TableHead>
-                <TableHead>Level</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>End Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Course Link</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {certificates.map((certificate) => (
-                <TableRow key={certificate.id}>
-                  <TableCell className="font-medium">{certificate.courseName}</TableCell>
-                  <TableCell>{certificate.organization || '-'}</TableCell>
-                  <TableCell>{certificate.certificateName || '-'}</TableCell>
-                  <TableCell>{certificate.level || '-'}</TableCell>
+      <div className="border rounded-lg overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="min-w-[150px]">Course Name</TableHead>
+              <TableHead className="min-w-[120px]">Organization</TableHead>
+              <TableHead className="min-w-[120px]">Certificate</TableHead>
+              <TableHead className="min-w-[100px]">Level</TableHead>
+              <TableHead className="min-w-[100px]">Start Date</TableHead>
+              <TableHead className="min-w-[100px]">End Date</TableHead>
+              <TableHead className="min-w-[100px]">Status</TableHead>
+              <TableHead className="min-w-[80px]">Course Link</TableHead>
+              {isAdmin() && <TableHead className="min-w-[120px]">User</TableHead>}
+              <TableHead className="text-right min-w-[100px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {certificates.map((certificate) => (
+              <TableRow key={certificate.id}>
+                <TableCell className="font-medium">{certificate.courseName}</TableCell>
+                <TableCell>{certificate.organization || '-'}</TableCell>
+                <TableCell>{certificate.certificateName || '-'}</TableCell>
+                <TableCell>{certificate.level || '-'}</TableCell>
+                <TableCell>
+                  {certificate.startDate
+                    ? new Date(certificate.startDate).toLocaleDateString()
+                    : '-'
+                  }
+                </TableCell>
+                <TableCell>
+                  {certificate.endDate
+                    ? new Date(certificate.endDate).toLocaleDateString()
+                    : '-'
+                  }
+                </TableCell>
+                <TableCell>
+                  <Badge className={getStatusColor(certificate.status || 'Not Started')}>
+                    {certificate.status || 'Not Started'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {certificate.courseLink ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(certificate.courseLink, '_blank')}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                  ) : '-'}
+                </TableCell>
+                {isAdmin() && (
                   <TableCell>
-                    {certificate.startDate
-                      ? new Date(certificate.startDate).toLocaleDateString()
-                      : '-'
-                    }
+                    {users.find(user => user.userId === certificate.userId)?.fullName || 'Unknown User'}
                   </TableCell>
-                  <TableCell>
-                    {certificate.endDate
-                      ? new Date(certificate.endDate).toLocaleDateString()
-                      : '-'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(certificate.status || 'Not Started')}>
-                      {certificate.status || 'Not Started'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {certificate.courseLink ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.open(certificate.courseLink, '_blank')}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(certificate)}
-                        disabled={updateLoading === certificate.id}
-                      >
-                        {updateLoading === certificate.id ? (
-                          <Loader className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Edit className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            disabled={deleteLoading === certificate.id}
+                )}
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(certificate)}
+                      disabled={updateLoading === certificate.id}
+                    >
+                      {updateLoading === certificate.id ? (
+                        <Loader className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Edit className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={deleteLoading === certificate.id}
+                        >
+                          {deleteLoading === certificate.id ? (
+                            <Loader className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the certificate
+                            <strong> {certificate.courseName}</strong> and remove it from our records.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteCertificate(certificate.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            {deleteLoading === certificate.id ? (
-                              <Loader className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the certificate
-                              <strong> {certificate.courseName}</strong> and remove it from our records.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteCertificate(certificate.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete Certificate
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                            Delete Certificate
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {certificates.length === 0 && (

@@ -63,3 +63,13 @@ export const deleteCertificate = async (id: number) => {
     throw new Error(error.response?.data?.message || 'Failed to delete certificate');
   }
 };
+
+export const getAllUsers = async () => {
+  try {
+    const response = await axiosInstance.get('/Employee/all');
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching users:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch users');
+  }
+};
